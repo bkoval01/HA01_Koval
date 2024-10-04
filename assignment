@@ -1,0 +1,36 @@
+use homework_2;
+-- Optimized code
+create index info_sales_summer on orders_large(order_date);
+explain analyze
+with info_sales_summer as (
+select clients_large.id, orders_large.order_id, orders_large.order_date, 
+products_large.product_id, products_large.product_name, products_large.product_category 
+from clients_large
+join orders_large on orders_large.client_id = clients_large.id
+join products_large on orders_large.product_id = products_large.product_id
+where orders_large.order_date between '2024-06-01' and '2024-08-31') 
+-- 
+select product_category, count(id) as quantity, order_date
+from info_sales_summer
+where product_category = 'Category3'
+group by product_category, order_date
+union 
+select 'product_category' as product_category, count(id) as quantity, order_date from info_sales_summer
+group by order_date
+order by order_date asc;
+
+-- Non-optimized code
+explain analyze
+select products_large.product_category, count(clients_large.id) as quantity, orders_large.order_date from clients_large
+join orders_large on orders_large.client_id = clients_large.id
+join products_large on orders_large.product_id = products_large.product_id
+where orders_large.order_date between '2024-06-01' and '2024-08-31'and products_large.product_category = 'Category3'
+group by products_large.product_category, orders_large.order_date
+union
+select 'product_category' as product_category, count(clients_large.id) as quantity, orders_large.order_date
+from clients_large
+join orders_large on orders_large.client_id = clients_large.id
+join products_large on orders_large.product_id = products_large.product_id
+where orders_large.order_date between '2024-06-01' and '2024-08-31'
+group by orders_large.order_date
+order by order_date asc;
